@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Users have balances. Recording an expense or payment increases the balance, and adding a coffee charges the
+  configurable coffee price, which defaults to €0.50.
+- The REST API records expenses with item details and optional notes, and records payments with optional notes.
+
 ### Changed
 
 - The README describes how the group buys coffee beans from the kitty and how a user who buys coffee with their own

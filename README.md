@@ -7,8 +7,8 @@
 
 Coffee Kitty counts the coffees that the users in a group drink from a shared coffee machine. The group buys new coffee
 beans from a shared cash box, the kitty. A user can also buy coffee with their own money and declare the purchase as an
-expense. So far, the app is a minimal REST API that stores users and their coffee counts, which grow by one coffee at a
-time. Prices, payments, expenses, a user interface, and authentication are still missing.
+expense. The REST API records expenses and payments, maintains each user's balance, and charges a configurable price
+when a user adds a coffee.
 
 Coffee Kitty is the running example of a software engineering course at Heidelberg University. Students first see the
 app in the lectures on agentic software engineering and extend it over the semester, for example with a price per cup
@@ -22,8 +22,12 @@ layer rules that ArchUnit enforces, but Coffee Kitty has only two entities: user
   digits, and underscores. Login names and email addresses are unique. The app stores every email address trimmed and
   in lowercase.
 - Every user has one consumption, which holds the user's coffee count. When the app creates a user, it also creates
-  the consumption with a coffee count of zero. Adding a coffee raises the coffee count by one, and no endpoint lowers
-  it. When two requests add a coffee for the same user at the same time, both coffees count.
+  the consumption with a coffee count of zero. Adding a coffee raises the coffee count by one and lowers the user's
+  balance by the configured price, which defaults to €0.50. When two requests add a coffee for the same user at the
+  same time, both coffees count.
+- `POST /users/{userId}/expenses` records a coffee, filter, or other purchase and increases the user's balance.
+- `POST /users/{userId}/payments` records a deposit and increases the user's balance. The endpoint remains open because
+  the app does not authenticate users; the caller is responsible for being an admin.
 - The REST API accepts and returns only JSON. Any client can call every endpoint, because Coffee Kitty has no
   authentication.
 - A Spring Boot backend in Kotlin stores the users and their coffee counts in PostgreSQL through Jakarta Persistence
@@ -180,6 +184,12 @@ curl http://localhost:8081/api/users/$USER_ID
 USER_ID=$(curl -s http://localhost:8081/api/users |
   python3 -c 'import json, sys; print(next(u["id"] for u in json.load(sys.stdin) if u["loginName"] == "jane_doe"))')
 curl http://localhost:8081/api/users/$USER_ID/consumption
+```
+
+`GET /users/{userId}/balance` returns the user's balance as `{ "loginName", "balance" }`:
+
+```shell
+curl http://localhost:8081/api/users/$USER_ID/balance
 ```
 
 `POST /users/{userId}/consumption` with `{ "delta": 1 }` adds one coffee and returns the new coffee count as

@@ -26,6 +26,16 @@ with a line "Avoid:", which lists words not to use for the concept.
 - **coffee count**: A user's total number of coffees. The number starts at zero when the user is created and never
   decreases.
   API: `ConsumptionDto.count`. Code: `CoffeeConsumption.count`, `coffee_consumptions.count`.
+- **balance**: The amount a user has paid for expenses and payments minus the price of the user's coffees. It may be
+  negative when the user owes the kitty.
+  API: `GET /api/users/{userId}/balance`, `BalanceDto`. Code: `User.balance`, `users.balance`.
+- **expense**: A purchase recorded by a user for coffee, filters, or another item. Recording an expense increases the
+  user's balance by its amount.
+  API: `POST /api/users/{userId}/expenses`, `ExpenseDto`. Code: `Expense`, `expenses`.
+- **payment**: A deposit recorded for a user. Recording a payment increases the user's balance by its amount.
+  API: `POST /api/users/{userId}/payments`, `PaymentDto`. Code: `Payment`, `payments`.
+- **admin**: A person responsible for recording payments. The current API has no authentication and therefore does not
+  enforce this role.
 - **consumption**: The stored record that holds the coffee count of one user. Every user has exactly one such record,
   which `UserService.create` creates together with the user.
   API: `/api/users/{userId}/consumption`, `ConsumptionDto`. Code: `CoffeeConsumption`, `coffee_consumptions`.

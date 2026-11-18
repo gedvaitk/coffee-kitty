@@ -42,6 +42,7 @@ springdoc:
 # campus-coffee.fixtures, this class is FixturesProperties. A comment on a key in this file says only why a profile
 # sets the value.
 campus-coffee:
+  coffee-price: 0.50
   fixtures:
     load-on-startup: false
 

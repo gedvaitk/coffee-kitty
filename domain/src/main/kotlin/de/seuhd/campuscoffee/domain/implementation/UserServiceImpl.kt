@@ -8,6 +8,7 @@ import de.seuhd.campuscoffee.domain.ports.data.CoffeeConsumptionDataService
 import de.seuhd.campuscoffee.domain.ports.data.UserDataService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.util.UUID
 
 /**
@@ -37,7 +38,13 @@ class UserServiceImpl(
         // timestamps, which the data module sets
         val created =
             userDataService.upsert(
-                user.copy(id = null, createdAt = null, updatedAt = null, emailAddress = emailAddress)
+                user.copy(
+                    id = null,
+                    createdAt = null,
+                    updatedAt = null,
+                    emailAddress = emailAddress,
+                    balance = BigDecimal("0.00")
+                )
             )
         // create the consumption after the user, because coffee_consumptions.user_id must reference a stored user
         coffeeConsumptionDataService.upsert(CoffeeConsumption(user = created, count = 0))

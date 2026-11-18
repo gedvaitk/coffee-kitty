@@ -4,8 +4,11 @@ import de.seuhd.campuscoffee.domain.exceptions.ValidationException
 import de.seuhd.campuscoffee.domain.model.CoffeeConsumption
 import de.seuhd.campuscoffee.domain.ports.api.CoffeeConsumptionService
 import de.seuhd.campuscoffee.domain.ports.data.CoffeeConsumptionDataService
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigDecimal
 import java.util.UUID
 
 /**
@@ -15,20 +18,36 @@ import java.util.UUID
  * concurrent requests could both read a count of 2 and both store a count of 3.
  */
 @Service
-class CoffeeConsumptionServiceImpl(
-    private val coffeeConsumptionDataService: CoffeeConsumptionDataService
-) : CoffeeConsumptionService {
-    override fun getByUserId(userId: UUID): CoffeeConsumption = coffeeConsumptionDataService.getByUserId(userId)
+class CoffeeConsumptionServiceImpl
+    @Autowired
+    constructor(
+        private val coffeeConsumptionDataService: CoffeeConsumptionDataService,
+        private val userDataService: de.seuhd.campuscoffee.domain.ports.data.UserDataService? = null,
+        @Value("\${campus-coffee.coffee-price:0.50}")
+        private val coffeePrice: BigDecimal = DEFAULT_COFFEE_PRICE
+    ) : CoffeeConsumptionService {
+        constructor(coffeeConsumptionDataService: CoffeeConsumptionDataService) :
+            this(coffeeConsumptionDataService, null, DEFAULT_COFFEE_PRICE)
 
-    @Transactional
-    override fun applyDelta(
-        userId: UUID,
-        delta: Int
-    ): CoffeeConsumption {
-        if (delta != 1) {
-            throw ValidationException("The delta must be +1.")
+        override fun getByUserId(userId: UUID): CoffeeConsumption = coffeeConsumptionDataService.getByUserId(userId)
+
+        @Transactional
+        override fun applyDelta(
+            userId: UUID,
+            delta: Int
+        ): CoffeeConsumption {
+            if (delta != 1) {
+                throw ValidationException("The delta must be +1.")
+            }
+            val current = coffeeConsumptionDataService.getByUserIdForUpdate(userId)
+            val user = userDataService?.getByIdForUpdate(userId) ?: current.user
+            val updatedUser = user.copy(balance = user.balance - coffeePrice)
+            coffeeConsumptionDataService.upsert(current.copy(count = current.count + delta, user = user))
+            userDataService?.upsert(updatedUser)
+            return current.copy(count = current.count + delta, user = updatedUser)
         }
-        val current = coffeeConsumptionDataService.getByUserIdForUpdate(userId)
-        return coffeeConsumptionDataService.upsert(current.copy(count = current.count + delta))
+
+        private companion object {
+            val DEFAULT_COFFEE_PRICE: BigDecimal = BigDecimal("0.50")
+        }
     }
-}
